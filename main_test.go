@@ -1,9 +1,8 @@
 package main
 
 import (
-	"encoding/json"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -31,36 +30,36 @@ func TestGetID(t *testing.T) {
 
 	for ID, exp := range cases {
 		res, err := http.Get(ts.URL + "/components/" + ID)
-		if err != nil {
-			log.Fatal(err)
-		}
+		assertNoError(t, err)
 
 		body, err := ioutil.ReadAll(res.Body)
 		res.Body.Close()
-		if err != nil {
-			t.Error(err.Error())
-		}
+		assertNoError(t, err)
 
-		if res.StatusCode != exp.statusCode {
-			t.Errorf("got (%d), want (%d)", res.StatusCode, exp.statusCode)
-		}
+		assert(t, res.StatusCode == exp.statusCode, notEq(res.StatusCode, exp.statusCode))
 
-		// UnMarshall
-		if exp.statusCode != 200 {
-			return
-		}
-
-		var c store.Component
-		err = json.Unmarshal(body, &c)
-		if err != nil {
-			t.Error(err.Error())
-		}
-
-		if c.ID != ID {
-			t.Errorf("got ID (%s), want (%s)", c.ID, ID)
+		if exp.statusCode == 200 {
+			var c store.Component
+			err = c.Unmarshall(body)
+			assertNoError(t, err)
+			assert(t, c.ID == ID, notEq(c.ID, ID))
 		}
 
 	}
+}
 
-	t.Error("failed (expected)")
+func assertNoError(t *testing.T, err error) {
+	if err != nil {
+		t.Error(err.Error())
+	}
+}
+
+func assert(t *testing.T, test bool, msg string) {
+	if !test {
+		t.Error(msg)
+	}
+}
+
+func notEq(a, b interface{}) string {
+	return fmt.Sprintf("got %v; want %v", a, b)
 }

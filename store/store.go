@@ -1,6 +1,7 @@
 package store
 
 import (
+	"encoding/json"
 	"errors"
 )
 
@@ -13,6 +14,15 @@ type Component struct {
 	CSS         string
 	Version     int
 	Tags        []string
+}
+
+func (c Component) Marshall() []byte {
+	bytes, _ := json.Marshal(c)
+	return bytes
+}
+
+func (c *Component) Unmarshall(data []byte) error {
+	return json.Unmarshal(data, c)
 }
 
 type Getter interface {
