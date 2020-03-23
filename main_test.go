@@ -54,6 +54,7 @@ func TestCreate(t *testing.T) {
 	s := store.MemoryStore{Components: []store.Component{}}
 	ts := httptest.NewServer(http.HandlerFunc(Create(&s)))
 	defer ts.Close()
+
 	component := store.Component{ID: "foo"}
 	res, err := http.Post(ts.URL+"/components", "application/json", bytes.NewReader(component.Marshall()))
 	assertNoError(t, err)
