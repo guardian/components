@@ -27,11 +27,15 @@ func (c *Component) Unmarshall(data []byte) error {
 
 type Getter interface {
 	Get(string) (Component, error)
-	GetAll() []Component
+	GetAll() ([]Component, error)
 }
 
 type Setter interface {
-	Set(Component)
+	Set(Component) error
+}
+
+type Deleter interface {
+	Delete(string) error
 }
 
 type MemoryStore struct {
@@ -48,6 +52,23 @@ func (s MemoryStore) Get(ID string) (Component, error) {
 	return Component{}, errors.New("item not found")
 }
 
-func (s MemoryStore) GetAll() []Component {
-	return s.Components
+func (s MemoryStore) GetAll() ([]Component, error) {
+	return s.Components, nil
+}
+
+func (s *MemoryStore) Set(c Component) error {
+	s.Components = append(s.Components, c)
+	return nil
+}
+
+func (s *MemoryStore) Delete(ID string) error {
+	var data []Component
+	for _, c := range s.Components {
+		if c.ID != ID {
+			data = append(data, c)
+		}
+	}
+
+	s.Components = data
+	return nil
 }

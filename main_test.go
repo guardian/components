@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -25,7 +26,8 @@ func TestGetID(t *testing.T) {
 	}
 
 	s := store.MemoryStore{Components: []store.Component{c101}}
-	ts := httptest.NewServer(http.HandlerFunc(GetID(s)))
+	r := Router(&s)
+	ts := httptest.NewServer(http.HandlerFunc(r.ServeHTTP))
 	defer ts.Close()
 
 	for ID, exp := range cases {
@@ -38,7 +40,7 @@ func TestGetID(t *testing.T) {
 
 		assert(t, res.StatusCode == exp.statusCode, notEq(res.StatusCode, exp.statusCode))
 
-		if exp.statusCode == 200 {
+		if res.StatusCode == 200 {
 			var c store.Component
 			err = c.Unmarshall(body)
 			assertNoError(t, err)
@@ -46,6 +48,18 @@ func TestGetID(t *testing.T) {
 		}
 
 	}
+}
+
+func TestCreate(t *testing.T) {
+	s := store.MemoryStore{Components: []store.Component{}}
+	ts := httptest.NewServer(http.HandlerFunc(Create(&s)))
+	defer ts.Close()
+	component := store.Component{ID: "foo"}
+	res, err := http.Post(ts.URL+"/components", "application/json", bytes.NewReader(component.Marshall()))
+	assertNoError(t, err)
+
+	assert(t, res.StatusCode == 201, notEq(res.StatusCode, 200))
+	assert(t, len(s.Components) == 1, "expected component to be stored")
 }
 
 func assertNoError(t *testing.T, err error) {
